@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    	<meta charset="UTF-8">
+    	<title>Draw</title>
+    	<style>
+			body {
+				margin: 0;
+			}
+			canvas {
+				border: none;
+			}
+    	</style>
+  	</head>
+ 	<body>
+  		<canvas width="500" height="500"></canvas>
+  		<script>
+
+	  	window.onload = function(){
+	  		
+
+	  		var canvas = document.querySelector("canvas");
+	  		canvas.height = window.innerHeight;
+	  		canvas.width = window.innerWidth;
+
+	  		var colors = [
+	  			'#353866',
+	  			'#AAABD3',
+	  			'#CBA6C3'
+	  			//'#009900',
+	  			//'#000099'
+	  		];
+	  		var ctx = canvas.getContext("2d");
+	  		// ctx.fillStyle = "red";
+	  		// ctx.fillRect(10, 10, 100, 100);
+	  		var canvasWidth = canvas.width;
+	  		var canvasHeight = canvas.height;
+	  		// var x = 20;
+	  		// var y = canvasSize/2;
+	  		// var velx = 10;
+	  		// var vely = -10;
+	  		// var gravity = 1;
+			
+
+			document.addEventListener("mousemove", function(e){
+				// for(var i = 0; i < 1; i ++)
+				// 	new Particle({"x" : e.clientX, "y" : e.clientY});
+				mousePosition.x = e.clientX;
+				mousePosition.y = e.clientY;
+			})
+
+			var mousePosition = {
+				"x" : 0,
+				"y" : 0
+			};
+
+	  		var particles = {};
+	  		var particleIndex = 0;
+	  		var settings = {
+	  			density: 20,
+	  			// particleSize: 10,
+	  			// particleRadius: 5,
+	  			startingX: 10,
+	  			startingY: 10,
+	  			gravity: 0.5,
+	  			groundLevel: canvasHeight,
+	  			leftWall: canvasWidth * 0.25,
+	  			rightWall: canvasWidth * 0.75
+	  		};
+	  		function Particle(start){
+	  			this.x = start.x ? start.x : settings.startingX;
+	  			this.y = start.y ? start.y : settings.startingY;
+	  			this.velx = (Math.random()*30) - 15;
+	  			this.vely = Math.random()*15;
+	  			this.size = 0.1;//Math.random()*50 + 1;
+	  			this.opacity = 1;//Math.random();
+	  			
+	  			particles[particleIndex] = this;
+	  			this.id = particleIndex;
+	  			this.life = 0;
+	  			this.maxLife = 100;
+	  			//var color = hexToRgb('#'+ ('000000' + Math.floor(Math.random()*16777215).toString(16)).slice(-6));
+	  			var key = Math.floor(Math.random() * (colors.length ));
+	  			
+	  			this.hexKey = key;
+	  			this.hex = hexToRgb(colors[key]);
+
+	  			this.color = "rgba("+this.hex.r+","+this.hex.g+","+this.hex.b+","+this.opacity+")";
+	  			this.radius = this.size/2;
+	  			this.stacked = false;
+	  			// ctx.fillStyle = "#"+Math.floor(Math.random()*16777215).toString(16);
+	  			particleIndex++;
+
+	  		}
+	  		function circleCollision(circle1, circle2) {
+
+				var dx = circle1.x - circle2.x;
+				var dy = circle1.y - circle2.y;
+				var distance = Math.sqrt(dx * dx + dy * dy);
+
+				if (distance < circle1.radius + circle2.radius) 
+				{
+				    return true;
+				}
+				return false;	
+  			}
+  			function hexToRgb(hex) {
+  			    var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  			    if(!result)
+  			    	console.log(hex);
+  			    return result ? {
+  			        r: parseInt(result[1], 16),
+  			        g: parseInt(result[2], 16),
+  			        b: parseInt(result[3], 16)
+  			    } : null;
+  			}
+	  		Particle.prototype.draw = function(){
+
+	  			if(!this.stacked){
+		  			this.x += this.velx;
+		  			this.y += this.vely;
+		  			this.vely += settings.gravity;
+				    
+				    
+
+	  			} else {
+	  				// this.opacity -= 0.0075;	
+	  			}
+	  			this.size += 0.4;
+	  			this.radius = this.size/2;
+	  			
+	  			this.color = "rgba("+this.hex.r+","+this.hex.g+","+this.hex.b+","+this.opacity+")";
+
+	  			this.life++;
+	  			
+	  			/*if (this.life >= this.maxLife) {
+	  			 	delete particles[this.id];
+	  			}*/
+	  			if(this.opacity <= 0 || this.size > 100)
+	  				delete particles[this.id];
+
+	  			if (this.y >= canvasHeight){
+	  				this.y = canvasHeight - this.size;
+	  				this.x -= this.velx;
+	  				this.stacked = true;
+	  			}
+	  			
+	  			if (!this.stacked) {
+		  			for(var i in particles){
+		  				if (!particles[i].stacked){
+		  					continue;
+		  				}	
+		  				/*if(particles[i].key != this.key)
+		  				{
+		  					continue;
+		  				}*/
+			  			if (particles[i].id != this.id){
+			  				if (circleCollision(particles[i], this)){
+			  					this.y = particles[i].y - (this.size);
+			  					this.stacked = true;
+			  					break;
+			  				}
+			  			}
+		  			}
+
+	  			}
+
+	 				  		
+		  		ctx.beginPath();
+		  		ctx.fillStyle = this.color;
+		  		ctx.arc(this.x, this.y, this.size, 0, Math.PI*2, true);
+		  		ctx.closePath();
+		  		ctx.fill();
+	  		}
+	  		setInterval(function(){
+	  			ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+	  			ctx.fillStyle = "#F8FAFF";
+	  			ctx.fillRect(0, 0, canvasWidth, canvasHeight);
+	  			for (var i = 0; i < settings.density; i++){
+	  				
+	  				if (Math.random() > 0.85){
+	  					new Particle(mousePosition);
+	  				}
+	  				//if(Object.keys(particles).length < 10)
+	  					//new Particle(); 
+	  			}
+	  			for (var i in particles){
+	  				particles[i].draw();
+	  			}
+	  		}, 30);
+	  	};
+
+
+  		</script>
+  	</body>
+</html>
+
+<div id='VersionReleaseControl' style='position: absolute; bottom: 0; right: 0; background: rgba(0,0,0,0.5); color: #fff; font-family: Arial; font-size: 10px; padding: 5px;'>1.1.0-dev</div>
